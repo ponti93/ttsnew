@@ -261,7 +261,7 @@ def launch_server(flask_app=None, current_user=None):
         
         interface = create_interface(user_id)
         interface.launch(
-            server_name="127.0.0.1",
+            server_name="0.0.0.0",
             server_port=port,
             share=False,
             prevent_thread_lock=True
