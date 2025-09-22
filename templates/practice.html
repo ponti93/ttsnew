@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Practice - Pronunciation App{% endblock %}
+
+{% block head %}
+{{ super() }}
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:7861 http://127.0.0.1:7861; media-src 'self' blob: http://localhost:7861 http://127.0.0.1:7861; connect-src 'self' http://localhost:7861 http://127.0.0.1:7861">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">Pronunciation Practice</h2>
+        
+        <div id="gradio-wrapper">
+            <iframe 
+                src="{{ gradio_url }}"
+                frameborder="0"
+                width="100%"
+                height="800px"
+                allow="microphone *"
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+            ></iframe>
+        </div>
+    </div>
+</div>
+
+<!-- Add user info as hidden fields -->
+{% if is_authenticated %}
+<input type="hidden" id="user_id" value="{{ user_id }}">
+<input type="hidden" id="is_authenticated" value="true">
+{% endif %}
+
+<script>
+    // Request microphone permission when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(function(stream) {
+                stream.getTracks().forEach(track => track.stop());
+                console.log("Microphone permission granted");
+            })
+            .catch(function(err) {
+                console.error("Error accessing microphone:", err);
+                alert("Please allow microphone access to use the pronunciation practice feature.");
+            });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Home - AI Pronunciation App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title text-center mb-4">Welcome to the AI Pronunciation App</h1>
+                
+                <div class="text-center mb-4">
+                    <a href="/practice" class="btn btn-primary btn-lg">Start Practicing</a>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <h3>Features</h3>
+                        <ul class="list-unstyled">
+                            <li>✓ Real-time pronunciation feedback</li>
+                            <li>✓ AI-powered analysis</li>
+                            <li>✓ Practice with custom phrases</li>
+                            <li>✓ Track your progress</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h3>How to Use</h3>
+                        <ol>
+                            <li>Select or type a phrase</li>
+                            <li>Listen to the correct pronunciation</li>
+                            <li>Record your pronunciation</li>
+                            <li>Get instant feedback and tips</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
