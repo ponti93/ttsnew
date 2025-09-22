@@ -10,3 +10,6 @@ flask-login
 psycopg2-binary
 plotly
 epitran
+tensorflow
+pytorch
+flask_wtf
