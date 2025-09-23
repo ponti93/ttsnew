@@ -7,7 +7,6 @@ from models.models import db, User, PracticeSession, PhonemeDetail
 # Global variable to store Flask app instance
 app = None
 
-
 def get_default_user():
     """Get the first user from the database to use as default."""
     try:
@@ -21,6 +20,7 @@ def get_default_user():
 
 def find_free_port(start_port=7861, max_attempts=100):
     """Find a free port starting from start_port."""
+    import socket
     for port in range(start_port, start_port + max_attempts):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
@@ -197,6 +197,7 @@ def process_audio(phrase, audio, user_id):
 
 
 def create_interface(user_id):
+    """Create the Gradio Blocks interface."""
     with gr.Blocks() as interface:
         gr.Markdown("# Pronunciation Practice")
         gr.Markdown("Select a phrase, listen to it, record your pronunciation, and get feedback.")
@@ -254,8 +255,26 @@ def create_interface(user_id):
     return interface
 
 
+# 🚀 New helper for Flask integration
+def get_gradio_app(flask_app=None, current_user=None):
+    """
+    Returns a Gradio interface instance mounted inside Flask.
+    Flask passes in its app and current_user so sessions + DB saving work.
+    """
+    global app
+    app = flask_app
+
+    user_id = None
+    if flask_app:
+        with flask_app.app_context():
+            user_id = current_user.id if current_user and getattr(current_user, "is_authenticated", False) else get_default_user()
+
+    return create_interface(user_id)
+
+
+# For local standalone testing
 def launch_server(flask_app=None, current_user=None):
-    """Launch the Gradio server on a free port."""
+    """Launch the Gradio server standalone (dev only)."""
     try:
         global app
         app = flask_app
@@ -265,7 +284,7 @@ def launch_server(flask_app=None, current_user=None):
         user_id = None
         if app:
             with app.app_context():
-                user_id = current_user.id if current_user and current_user.is_authenticated else get_default_user()
+                user_id = current_user.id if current_user and getattr(current_user, "is_authenticated", False) else get_default_user()
 
         interface = create_interface(user_id)
         interface.launch(
