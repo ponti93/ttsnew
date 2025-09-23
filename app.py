@@ -2,10 +2,10 @@ from flask import Flask, render_template, flash, redirect, url_for
 from flask_login import LoginManager, current_user, login_required
 import os
 from models.models import db, User, PracticeSession, PhonemeDetail
-from gradio_server import launch_server
+from gradio_server import get_gradio_app
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:incorrect@localhost/pronunciation_app'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://ttsnew_user:nUyGeUiwnKKzSrV07yhQEEgg5BVqTNwy@dpg-d38spebe5dus73ael5fg-a.oregon-postgres.render.com:5432/ttsnew'
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev')
 
 login_manager = LoginManager(app)
@@ -23,18 +23,6 @@ app.register_blueprint(auth_bp, url_prefix='/auth')
 def load_user(user_id):
     return db.session.get(User, int(user_id))
 
-# Initialize Gradio server to find a free port
-gradio_port = None
-
-def initialize_gradio():
-    """Initialize the Gradio server with the current user context."""
-    global gradio_port
-    try:
-        gradio_port = launch_server(app, current_user)
-        return gradio_port is not None
-    except Exception as e:
-        print(f"Error initializing Gradio server: {str(e)}")
-        return False
 
 # Flask Routes
 @app.route('/')
@@ -44,41 +32,19 @@ def index():
 @app.route('/practice')
 @login_required
 def practice():
-    global gradio_port
-    
-    # Initialize Gradio if not already running
-    if gradio_port is None:
-        if not initialize_gradio():
-            flash("Error initializing practice interface", "error")
-            return redirect(url_for('index'))
-    
     return render_template('practice.html', 
-                         gradio_url=f"http://127.0.0.1:{gradio_port}",
+                         gradio_url=url_for('gradio_app'),
                          user_id=current_user.id,
                          is_authenticated=True)
 
-# Gradio Interface
 
-
-# Global variable to store gradio server port
-gradio_port = None
-
-def initialize_gradio():
-    global gradio_port
-    try:
-        gradio_port = launch_server(app, current_user)
-        return gradio_port is not None
-    except Exception as e:
-        print(f"Error initializing Gradio server: {str(e)}")
-        return False
+# Mount Gradio as a Flask route
+from flask import Response
+gradio_app = get_gradio_app(app, current_user)
+@app.route('/gradio')
+def gradio_app_route():
+    return Response(gradio_app.run(), mimetype="text/html")
 
 if __name__ == "__main__":
-    with app.app_context():
-        # Initialize Gradio server
-        if not initialize_gradio():
-            print("Failed to initialize Gradio server")
-            exit(1)
-        
-       # Use PORT env variable for Render
-        port = int(os.environ.get("PORT", 5000))
-        app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
