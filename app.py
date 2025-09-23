@@ -5,7 +5,7 @@ from models.models import db, User, PracticeSession, PhonemeDetail
 from gradio_server import get_gradio_app
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://ttsnew_user:nUyGeUiwnKKzSrV07yhQEEgg5BVqTNwy@dpg-d38spebe5dus73ael5fg-a.oregon-postgres.render.com:5432/ttsnew'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev')
 
 login_manager = LoginManager(app)
