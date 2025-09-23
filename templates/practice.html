@@ -4,7 +4,10 @@
 
 {% block head %}
 {{ super() }}
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:7861 http://127.0.0.1:7861; media-src 'self' blob: http://localhost:7861 http://127.0.0.1:7861; connect-src 'self' http://localhost:7861 http://127.0.0.1:7861">
+<meta http-equiv="Content-Security-Policy" 
+      content="default-src 'self' 'unsafe-inline' 'unsafe-eval'; 
+               media-src 'self' blob:; 
+               connect-src 'self'">
 {% endblock %}
 
 {% block content %}
