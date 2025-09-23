@@ -89,7 +89,7 @@ def save_practice_session(phrase, result, user_id):
 
 def format_detailed_feedback(result):
     """Format the analysis result into detailed feedback."""
-            def get_default_user(flask_app):
+def get_default_user(flask_app):
                 """Get the first user from the database to use as default."""
                 with flask_app.app_context():
                     user = User.query.first()
