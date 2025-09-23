@@ -85,13 +85,15 @@ def save_practice_session(phrase, result, user_id):
             return True
         except Exception as e:
             db.session.rollback()
-            print(f"Error saving practice session: {str(e)}")
             return False
 
 def format_detailed_feedback(result):
     """Format the analysis result into detailed feedback."""
-    try:
-        feedback = "Analysis Results:\n\n"
+            def get_default_user(flask_app):
+                """Get the first user from the database to use as default."""
+                with flask_app.app_context():
+                    user = User.query.first()
+                    return user.id if user else None
         feedback += f"Overall Score: {result['scores']['overall']:.1f}%\n\n"
         
         feedback += "Detailed Scores:\n"
@@ -106,7 +108,6 @@ def format_detailed_feedback(result):
         
         if result['feedback']['improvement_tips']:
             feedback += "Improvement Tips:\n"
-            for tip in result['feedback']['improvement_tips']:
                 safe_tip = ''.join(c for c in tip if ord(c) < 128)
                 feedback += f"* {safe_tip}\n"
                 
@@ -260,6 +261,12 @@ def launch_server(flask_app=None, current_user=None):
                 user_id = current_user.id if current_user and current_user.is_authenticated else get_default_user()
         
         interface = create_interface(user_id)
+            # Export a mountable Gradio app for Flask
+            def get_gradio_app(flask_app, current_user=None):
+                user_id = None
+                with flask_app.app_context():
+                    user_id = current_user.id if current_user and getattr(current_user, 'is_authenticated', False) else get_default_user(flask_app)
+                return create_interface(user_id, flask_app)
         interface.launch(
             server_name="0.0.0.0",
             server_port=port,
