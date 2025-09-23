@@ -102,7 +102,7 @@ def analyze():
 # --------------------------------
 # Init DB
 # --------------------------------
-@app.before_first_request
+@app.before_serving
 def create_tables():
     db.create_all()
 
