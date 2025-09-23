@@ -7,6 +7,7 @@ from models.models import db, User, PracticeSession, PhonemeDetail
 # Global variable to store Flask app instance
 app = None
 
+
 def get_default_user():
     """Get the first user from the database to use as default."""
     try:
@@ -16,6 +17,7 @@ def get_default_user():
     except Exception as e:
         print(f"Error getting default user: {str(e)}")
         return None
+
 
 def find_free_port(start_port=7861, max_attempts=100):
     """Find a free port starting from start_port."""
@@ -28,6 +30,7 @@ def find_free_port(start_port=7861, max_attempts=100):
                 continue
     raise OSError(f"Could not find a free port in range {start_port}-{start_port + max_attempts}")
 
+
 # Predefined phrases
 CUSTOM_PHRASE_OPTION = "[ Type a custom phrase ]"
 PREDEFINED_PHRASES = [
@@ -37,6 +40,7 @@ PREDEFINED_PHRASES = [
     "The weather is beautiful."
 ]
 
+
 def play_phrase(phrase):
     """Generate TTS audio for the phrase."""
     if phrase:
@@ -44,20 +48,21 @@ def play_phrase(phrase):
         return audio_file, "Audio generated. Listen above."
     return None, "No phrase selected."
 
+
 def save_practice_session(phrase, result, user_id):
     """Save the practice session to database."""
     global app
-    
+
     if user_id is None or app is None:
         return False
-        
+
     with app.app_context():
         try:
             user = db.session.get(User, user_id)
             if not user:
                 print(f"Warning: Could not find user with ID {user_id}")
                 return False
-                
+
             practice_session = PracticeSession(
                 user_id=user.id,
                 target_phrase=phrase,
@@ -67,10 +72,10 @@ def save_practice_session(phrase, result, user_id):
                 phoneme_accuracy=result['scores']['phoneme_accuracy'],
                 completeness_score=result['scores']['completeness']
             )
-            
+
             db.session.add(practice_session)
             db.session.flush()
-            
+
             if result['feedback']['phoneme_issues']:
                 for issue in result['feedback']['phoneme_issues']:
                     phoneme_detail = PhonemeDetail(
@@ -80,56 +85,56 @@ def save_practice_session(phrase, result, user_id):
                         is_correct=False
                     )
                     db.session.add(phoneme_detail)
-                    
+
             db.session.commit()
             return True
-        except Exception as e:
+        except Exception:
             db.session.rollback()
             return False
 
+
 def format_detailed_feedback(result):
     """Format the analysis result into detailed feedback."""
-def get_default_user(flask_app):
-                """Get the first user from the database to use as default."""
-                with flask_app.app_context():
-                    user = User.query.first()
-                    return user.id if user else None
+    try:
+        feedback = ""
         feedback += f"Overall Score: {result['scores']['overall']:.1f}%\n\n"
-        
+
         feedback += "Detailed Scores:\n"
         feedback += f"* Word Accuracy: {result['scores']['word_accuracy']:.1f}%\n"
         feedback += f"* Phoneme Accuracy: {result['scores']['phoneme_accuracy']:.1f}%\n"
         feedback += f"* Completeness: {result['scores']['completeness']:.1f}%\n\n"
-        
+
         safe_transcript = ''.join(c for c in result['transcript'] if ord(c) < 128)
         feedback += f"Your pronunciation: {safe_transcript}\n\n"
-        
+
         feedback += f"Feedback: {result['feedback']['general_feedback']}\n\n"
-        
+
         if result['feedback']['improvement_tips']:
             feedback += "Improvement Tips:\n"
+            for tip in result['feedback']['improvement_tips']:
                 safe_tip = ''.join(c for c in tip if ord(c) < 128)
                 feedback += f"* {safe_tip}\n"
-                
+
         if result['feedback']['phoneme_issues']:
             feedback += "\nSound Improvements:\n"
             for issue in result['feedback']['phoneme_issues']:
                 safe_tip = ''.join(c for c in issue['tip'] if ord(c) < 128)
                 feedback += f"* {safe_tip}\n"
-                
+
         return feedback
     except Exception as e:
         return f"Error formatting feedback: {str(e)}"
 
+
 def process_audio(phrase, audio, user_id):
     """Process the recorded audio and provide feedback."""
     global app
-    
+
     if not phrase:
         return "Please select or enter a phrase first."
     if audio is None:
         return "Please record your audio."
-    
+
     # If no user_id provided, try to get the default user
     if user_id is None and app:
         with app.app_context():
@@ -163,18 +168,18 @@ def process_audio(phrase, audio, user_id):
 
     try:
         result = analyze_pronunciation(phrase, audio_path)
-        
+
         if audio_path.endswith('.wav') and tempfile.gettempdir() in audio_path:
             try:
                 os.remove(audio_path)
             except:
                 pass
-        
+
         if not result['success']:
             return "Error analyzing pronunciation. Please try again."
-            
+
         feedback = format_detailed_feedback(result)
-        
+
         # Save to database if we have a user_id
         if user_id:
             result['target_phrase'] = phrase
@@ -184,17 +189,18 @@ def process_audio(phrase, audio, user_id):
                 feedback += "\n\nWarning: Failed to save practice session."
         else:
             feedback += "\n\nNote: Practice session not saved (not logged in)."
-            
+
         return feedback
-        
+
     except Exception as e:
         return f"Error during analysis: {str(e)}"
+
 
 def create_interface(user_id):
     with gr.Blocks() as interface:
         gr.Markdown("# Pronunciation Practice")
         gr.Markdown("Select a phrase, listen to it, record your pronunciation, and get feedback.")
-        
+
         with gr.Row():
             phrase_dropdown = gr.Dropdown(
                 label="Select Phrase Type",
@@ -202,7 +208,7 @@ def create_interface(user_id):
                 value=CUSTOM_PHRASE_OPTION,
                 interactive=True
             )
-            
+
         with gr.Row():
             phrase_input = gr.Textbox(
                 label="Phrase to Practice",
@@ -210,14 +216,14 @@ def create_interface(user_id):
                 value="",
                 interactive=True
             )
-            
+
         play_btn = gr.Button("Play Phrase")
         audio_player = gr.Audio(label="Phrase Audio")
         play_output = gr.Textbox(label="Status", interactive=False)
-        
+
         gr.Markdown("### Record Your Pronunciation")
         audio_recorder = gr.Audio(sources="microphone", label="Record here")
-        
+
         submit_btn = gr.Button("Analyze Pronunciation")
         result_output = gr.Textbox(label="Feedback", lines=10)
 
@@ -235,38 +241,33 @@ def create_interface(user_id):
 
         phrase_dropdown.change(on_dropdown_select, inputs=[phrase_dropdown], outputs=[phrase_input])
         play_btn.click(
-            lambda x, y: play_phrase(get_active_phrase(x, y)), 
-            inputs=[phrase_input, phrase_dropdown], 
+            lambda x, y: play_phrase(get_active_phrase(x, y)),
+            inputs=[phrase_input, phrase_dropdown],
             outputs=[audio_player, play_output]
         )
         submit_btn.click(
-            lambda x, y, z: process_audio(get_active_phrase(x, y), z, user_id), 
-            inputs=[phrase_input, phrase_dropdown, audio_recorder], 
+            lambda x, y, z: process_audio(get_active_phrase(x, y), z, user_id),
+            inputs=[phrase_input, phrase_dropdown, audio_recorder],
             outputs=result_output
         )
 
     return interface
+
 
 def launch_server(flask_app=None, current_user=None):
     """Launch the Gradio server on a free port."""
     try:
         global app
         app = flask_app
-        
+
         port = find_free_port()
         # Use the default user if no user is provided
         user_id = None
         if app:
             with app.app_context():
                 user_id = current_user.id if current_user and current_user.is_authenticated else get_default_user()
-        
+
         interface = create_interface(user_id)
-            # Export a mountable Gradio app for Flask
-            def get_gradio_app(flask_app, current_user=None):
-                user_id = None
-                with flask_app.app_context():
-                    user_id = current_user.id if current_user and getattr(current_user, 'is_authenticated', False) else get_default_user(flask_app)
-                return create_interface(user_id, flask_app)
         interface.launch(
             server_name="0.0.0.0",
             server_port=port,
@@ -278,6 +279,7 @@ def launch_server(flask_app=None, current_user=None):
     except Exception as e:
         print(f"Error launching Gradio server: {str(e)}")
         return None
+
 
 if __name__ == "__main__":
     launch_server()
